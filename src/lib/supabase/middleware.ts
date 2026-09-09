@@ -43,7 +43,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   const path = request.nextUrl.pathname;
-  const isPublic = path === '/' || path.startsWith('/login') || path.startsWith('/signup');
+  const isPublic = path === '/' || path.startsWith('/login') || path.startsWith('/signup')
+    || path.startsWith('/forgot-password') || path.startsWith('/reset-password') || path.startsWith('/auth/confirm');
 
   // Not logged in and trying to reach a private page -> send to login.
   if (!user && !isPublic) {

@@ -25,6 +25,9 @@ export default function LoginPage() {
           <span className="alert-icon">⛔</span><span>{error}</span>
         </div>}
         <p className="muted" style={{ marginTop: 16, marginBottom: 0 }}>
+          <Link href="/forgot-password">שכחת סיסמה?</Link>
+        </p>
+        <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>
           אין לך חשבון? <Link href="/signup">יצירת חשבון</Link>
         </p>
       </div>
