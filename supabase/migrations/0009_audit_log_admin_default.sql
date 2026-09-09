@@ -1,0 +1,45 @@
+-- ============================================================
+-- VitaMEn — migration 0009 (restore admin_id DB-level default)
+-- Run AFTER 0008_audit_log_fix.sql.
+--
+-- Real bug found live-testing 0008 against Supabase's Table Editor (not
+-- code — the actual rows): both existing catalog_audit_log rows have
+-- admin_id = NULL.
+--
+-- Root cause: 0007_audit_log.sql defined
+--   admin_id uuid not null default auth.uid() references profiles(id) on delete set null
+-- which 0008 rightly identified as self-contradictory (not null vs. on
+-- delete set null) and fixed by dropping not null. But 0007 had never
+-- actually run against this project (confirmed earlier — that's why the
+-- audit log was empty before 0008). So when 0008's `create table if not
+-- exists` ran, it wasn't repairing an existing column: it was creating the
+-- table for the first time, using 0008's own column definition —
+--   admin_id uuid references profiles(id) on delete set null
+-- — which only carries over the "drop not null" half of the intended fix.
+-- The `default auth.uid()` from 0007 was never reinstated anywhere in
+-- 0008, because 0008 was written assuming that default already existed on
+-- the live column and only needed the not-null constraint removed. It
+-- didn't; nothing put the default back. This migration does that.
+--
+-- Note: src/app/actions/catalog.ts's writeAuditLog() already sends
+-- admin_id explicitly on every insert when it can resolve one, and omits
+-- the key entirely (not `null`) when it can't — so this DB-level default
+-- is a genuine last-resort layer, not a no-op. (An earlier version of this
+-- comment claimed the app never depended on this default at all — that
+-- was itself wrong: the app used to send an explicit `null` on failure,
+-- which overrides any default. See catalog.ts's own comments and
+-- docs/submission/05_security.md for the corrected story.)
+-- It does NOT retroactively fix the two existing NULL rows (both are the
+-- test-data rows already slated for deletion before submission, not real
+-- catalog history worth repairing).
+-- ============================================================
+
+alter table catalog_audit_log alter column admin_id set default auth.uid();
+
+-- ============================================================
+-- VERIFY: as a logged-in admin, in the app (not the SQL editor — the SQL
+-- editor runs as a superuser/service role where auth.uid() is NULL, so
+-- testing there will misleadingly show admin_id = NULL even after this
+-- fix). Add a product, then check Table Editor -> catalog_audit_log:
+-- the new row's admin_id should now be a real uuid.
+-- ============================================================
