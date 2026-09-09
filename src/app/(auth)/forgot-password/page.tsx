@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
         <p className="muted" style={{ marginBottom: 4 }}>נשלח לך קישור לאיפוס הסיסמה למייל</p>
         {sent ? (
           <div className="alert" style={{ marginTop: 14 }}>
-            <span>אם קיים חשבון עם האימייל הזה, נשלח אליו קישור לאיפוס סיסמה. בדקי את תיבת הדואר (וגם את הספאם).</span>
+            <span>נשלח קישור לאיפוס סיסמא למייל</span>
           </div>
         ) : (
           <form action={action}>
