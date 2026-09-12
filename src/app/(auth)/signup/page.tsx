@@ -2,12 +2,20 @@
 import { signUp } from '@/app/actions/auth';
 import { useState } from 'react';
 import Link from 'next/link';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   async function action(formData: FormData) {
+    if (pending) return;
+    setPending(true);
+    setError(null);
     const res = await signUp(formData);
-    if (res?.error) setError(res.error);
+    if (res?.error) {
+      setError(res.error);
+      setPending(false);
+    }
   }
   return (
     <div className="container-narrow">
@@ -20,13 +28,15 @@ export default function SignupPage() {
           <label>אימייל</label>
           <input name="email" type="email" dir="ltr" required autoComplete="email" />
           <label>סיסמה</label>
-          <input name="password" type="password" dir="ltr" required minLength={6} autoComplete="new-password" />
+          <PasswordInput name="password" minLength={6} autoComplete="new-password" />
           <label>סוג חשבון</label>
           <select name="role" defaultValue="client">
             <option value="client">לקוח — מעקב אחר התוספים שלי</option>
             <option value="admin">מנהל — תחזוקת הקטלוג</option>
           </select>
-          <button className="primary" type="submit" style={{ width: '100%', marginTop: 18 }}>יצירת חשבון</button>
+          <button className="primary" type="submit" disabled={pending} style={{ width: '100%', marginTop: 18 }}>
+            {pending ? 'יוצר חשבון...' : 'יצירת חשבון'}
+          </button>
         </form>
         {error && <div className="alert alert-danger" style={{ marginTop: 14 }}>
           <span className="alert-icon">⛔</span><span>{error}</span>

@@ -24,7 +24,20 @@ export async function signUp(formData: FormData) {
       email, password,
       options: { data: { role, full_name: fullName } },
     });
-    if (error || !data.user) return { error: error?.message ?? 'Sign up failed.' };
+    if (error) return { error: error.message };
+    if (!data.user) return { error: 'Sign up failed.' };
+
+    // Supabase returns a "fake" user with an EMPTY identities array (and no
+    // error) when the email is already registered and confirmed - it does
+    // this on purpose, so signup can't be used to check which emails exist.
+    // Without this check that response looks identical to a real new signup
+    // (no error, data.user present), so the code fell through to redirect()
+    // as if the account had just been created. That's the bug: signing up
+    // with an existing email showed no error at all and tried to send the
+    // person into an account that was never created for this request.
+    if (data.user.identities && data.user.identities.length === 0) {
+      return { error: 'האימייל הזה כבר רשום במערכת. אפשר להתחבר או לאפס סיסמה.' };
+    }
 
     // NOTE: the profile row is created by the on_auth_user_created trigger
     // (see 0003_auth_trigger.sql). Inserting it here too caused
